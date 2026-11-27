@@ -1,6 +1,6 @@
 {
   "name": "Fluffee Wallpapers",
-  "short_name": "Fluffee",
+  "short_name": "Wallpapers",
   "description": "Generate wave and crystal-shard wallpapers at your screen's resolution.",
   "start_url": "./index.html",
   "scope": "./",

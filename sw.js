@@ -1,5 +1,5 @@
 // Network-first: always fresh when online, falls back to the cached copy offline.
-const CACHE = "fluffee-v2";
+const CACHE = "fluffee-v3";
 const FILES = ["./", "index.html", "shards.html", "tiles.html", "pwa.js", "common.css", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
 
