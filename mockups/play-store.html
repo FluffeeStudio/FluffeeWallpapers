@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fluffee Wallpapers · store listing mockup</title>
+<!-- Concept mockup of a store listing. Serve the repo over HTTP (python -m http.server) so the
+     page can drive the generator pages in hidden iframes and render real wallpapers. -->
+<style>
+  :root { --ps-bg:#131314; --ps-surface:#1e1f20; --ps-surface2:#282a2c; --ps-text:#e3e3e3; --ps-dim:#a8abaf;
+    --ps-green:#81c995; --ps-btn:#a8dab5; --ps-btn-text:#0f3a20; --ps-line:#303134; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; color:#e8e6f0; font:14px/1.45 Roboto, system-ui, "Segoe UI", sans-serif;
+    background: radial-gradient(1100px 700px at 15% -10%, #2a1a45 0%, transparent 60%),
+                radial-gradient(900px 600px at 100% 100%, #10243a 0%, transparent 60%), #0b0b10; }
+  .top { padding:28px 40px 0; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .top h1 { margin:0; font-size:22px; font-weight:600; }
+  .top p { margin:2px 0 0; color:#9a97ab; font-size:13px; }
+  .top .grow { flex:1; }
+  .shuffle { background:linear-gradient(90deg,#ff5f8f,#8a6bff); color:#fff; border:none; border-radius:999px;
+    padding:10px 18px; font:600 14px system-ui, sans-serif; cursor:pointer; }
+  .shuffle:hover { filter:brightness(1.1); }
+  .shuffle:disabled { opacity:.6; cursor:progress; }
+  main { display:flex; gap:56px; padding:28px 40px 60px; align-items:flex-start; flex-wrap:wrap; }
+
+  /* ---------- Phone frame ---------- */
+  .device { width:412px; height:892px; border-radius:48px; padding:11px; background:#050506; flex:none;
+    box-shadow:0 0 0 2px #2b2b33, 0 0 0 7px #121217, 0 40px 90px #000c; position:sticky; top:24px; }
+  .screen { width:100%; height:100%; border-radius:38px; overflow:hidden; background:var(--ps-bg);
+    color:var(--ps-text); display:flex; flex-direction:column; font-family:Roboto, system-ui, sans-serif; }
+  .status { height:34px; flex:none; display:flex; align-items:center; justify-content:space-between;
+    padding:6px 26px 0; font-size:13px; font-weight:500; }
+  .status .cam { width:12px; height:12px; border-radius:50%; background:#000; box-shadow:0 0 0 2px #1a1a1d; }
+  .status svg { height:13px; fill:var(--ps-text); }
+  .appbar { height:52px; flex:none; display:flex; align-items:center; padding:0 8px; gap:4px; }
+  .appbar .sp { flex:1; }
+  .ib { width:40px; height:40px; display:grid; place-items:center; border-radius:50%; }
+  .ib svg { width:22px; height:22px; fill:var(--ps-text); }
+  .scroll { flex:1; overflow-y:auto; scrollbar-width:none; padding-bottom:30px; }
+  .scroll::-webkit-scrollbar { display:none; }
+
+  .head { display:flex; gap:18px; padding:4px 22px 0; align-items:center; }
+  .icon { width:76px; height:76px; border-radius:18px; flex:none; box-shadow:0 1px 3px #0008; }
+  .title { font-size:23px; line-height:1.2; font-weight:500; }
+  .dev { color:var(--ps-green); font-weight:500; font-size:14px; margin-top:4px; }
+  .meta { color:var(--ps-dim); font-size:11.5px; margin-top:2px; }
+  .stats { display:flex; margin:20px 14px 0; }
+  .stats > div { flex:1; text-align:center; position:relative; }
+  .stats > div + div::before { content:""; position:absolute; left:0; top:8px; bottom:8px; width:1px; background:var(--ps-line); }
+  .stats b { display:block; font-size:14px; font-weight:500; }
+  .stats span { font-size:11.5px; color:var(--ps-dim); }
+  .rated { display:inline-block; border:1.5px solid var(--ps-text); border-radius:3px; font-size:10px !important;
+    padding:0 3px; line-height:15px; }
+  .install { margin:20px 22px 0; height:40px; border-radius:20px; background:var(--ps-btn); color:var(--ps-btn-text);
+    display:grid; place-items:center; font-weight:500; font-size:14px; }
+  .wish { display:flex; gap:8px; align-items:center; justify-content:center; color:var(--ps-green); font-size:13px;
+    font-weight:500; margin:14px 0 0; }
+  .wish svg { width:18px; fill:var(--ps-green); }
+  .carousel { display:flex; gap:8px; overflow-x:auto; padding:22px 22px 4px; scrollbar-width:none; }
+  .carousel::-webkit-scrollbar { display:none; }
+  .carousel > * { flex:none; border-radius:10px; overflow:hidden; }
+
+  .sec { padding:26px 22px 0; }
+  .h { display:flex; align-items:center; justify-content:space-between; font-size:17px; font-weight:500; margin-bottom:10px; }
+  .h svg { width:22px; fill:var(--ps-text); }
+  .sec p { margin:0; color:var(--ps-dim); font-size:13.5px; }
+  .muted { color:var(--ps-dim); font-size:13px; }
+  .chips { display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+  .chips span { border:1px solid #5f6368; border-radius:8px; padding:5px 12px; font-size:13px; color:var(--ps-text); }
+  .card { border:1px solid var(--ps-line); border-radius:12px; padding:16px; margin-top:14px; }
+  .card .li { display:flex; gap:16px; align-items:flex-start; font-size:13px; margin-bottom:14px; }
+  .card .li svg { width:20px; flex:none; fill:var(--ps-dim); margin-top:1px; }
+  .card .li small { display:block; color:var(--ps-dim); font-size:12px; }
+  .card a { color:var(--ps-green); font-weight:500; font-size:13px; text-decoration:none; }
+  .rating { display:flex; gap:20px; align-items:center; margin-top:6px; }
+  .big { font-size:52px; line-height:1; font-weight:400; }
+  .stars { color:var(--ps-green); letter-spacing:1px; font-size:12px; }
+  .bars { flex:1; }
+  .bar { display:flex; align-items:center; gap:10px; font-size:11px; color:var(--ps-dim); height:15px; }
+  .bar i { flex:1; height:9px; border-radius:5px; background:var(--ps-surface2); overflow:hidden; display:block; }
+  .bar i b { display:block; height:100%; background:var(--ps-green); border-radius:5px; }
+  .review { margin-top:22px; }
+  .who { display:flex; align-items:center; gap:12px; font-size:13px; }
+  .av { width:32px; height:32px; border-radius:50%; display:grid; place-items:center; font-weight:600; font-size:13px; color:#111; }
+  .review .stars { margin:8px 0 4px; }
+  .review .stars span { color:var(--ps-dim); font-size:11px; letter-spacing:0; margin-left:6px; }
+  .review p { color:var(--ps-text); font-size:13px; }
+  .helpful { color:var(--ps-dim); font-size:12px; margin-top:8px; }
+
+  /* ---------- Asset sheet ---------- */
+  .assets { flex:1; min-width:560px; }
+  .assets h2 { font-size:12px; text-transform:uppercase; letter-spacing:1.2px; color:#9a97ab; margin:0 0 12px; font-weight:600; }
+  .assets h2 em { font-style:normal; color:#6f6c80; text-transform:none; letter-spacing:0; margin-left:6px; font-weight:400; }
+  .assets section { margin-bottom:38px; }
+  .assets .row { display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+  .assets .bigicon { width:160px; height:160px; border-radius:36px; box-shadow:0 10px 30px #0008; }
+  .assets .sm { width:72px; height:72px; border-radius:50%; box-shadow:0 6px 20px #0008; }
+  .assets .shots { display:grid; grid-template-columns:repeat(auto-fill, 216px); gap:18px; }
+  .assets .shots > *, .assets .fg { border-radius:14px; overflow:hidden; box-shadow:0 14px 40px #0009; }
+
+  /* ---------- Feature graphic (designed at 1024×500) ---------- */
+  .fgbox { position:relative; overflow:hidden; }
+  .fg-in { position:absolute; left:0; top:0; width:1024px; height:500px; transform-origin:0 0; background:#111117 center/cover; }
+  .fg-in .shade { position:absolute; inset:0; background:linear-gradient(90deg, #0b0b12e6 0%, #0b0b1299 38%, transparent 70%); }
+  .fg-in .txt { position:absolute; left:70px; top:50%; transform:translateY(-50%); display:flex; gap:30px; align-items:center; }
+  .fg-in img { width:150px; height:150px; border-radius:34px; box-shadow:0 18px 50px #000a; }
+  .fg-in h3 { margin:0; font:700 62px/1.05 system-ui, "Segoe UI", sans-serif; color:#fff; letter-spacing:-.5px; }
+  .fg-in p { margin:12px 0 0; font:400 24px system-ui, sans-serif; color:#ffffffcc; }
+
+  /* ---------- Screenshot (designed at 270×480 = 1080×1920 / 4) ---------- */
+  .shot { position:relative; overflow:hidden; background:#111117; }
+  .shot-in { position:absolute; left:0; top:0; width:270px; height:480px; transform-origin:0 0; overflow:hidden; }
+  .shot-in .bgimg { position:absolute; inset:-40px; background:#111117 center/cover; filter:blur(22px) brightness(.5) saturate(1.3); }
+  .shot-in .copy { position:absolute; left:0; right:0; top:30px; text-align:center; padding:0 18px; color:#fff;
+    font-family:system-ui, "Segoe UI", sans-serif; }
+  .shot-in .copy b { display:block; font-size:23px; line-height:1.15; font-weight:700; letter-spacing:-.2px; }
+  .shot-in .copy span { display:block; font-size:11.5px; margin-top:7px; color:#ffffffc8; }
+  .shot-in .phone { position:absolute; left:50%; top:118px; width:178px; height:381px; margin-left:-89px;
+    border-radius:26px; background:#050506; padding:6px; box-shadow:0 0 0 1px #ffffff22, 0 20px 50px #000c; }
+  .shot-in .disp { width:166px; height:369px; border-radius:20px; overflow:hidden; position:relative; background:#111117 center/cover; }
+  .shot-in .lock { position:absolute; inset:0; color:#fff; text-align:center; font-family:system-ui, sans-serif;
+    text-shadow:0 1px 8px #0006; }
+  .shot-in .lock .d { margin-top:30px; font-size:8.5px; opacity:.9; }
+  .shot-in .lock .t { font-size:44px; font-weight:300; line-height:1; margin-top:4px; letter-spacing:-1px; }
+  .shot-in .lock .dock { position:absolute; bottom:16px; left:0; right:0; display:flex; justify-content:center; gap:12px; }
+  .shot-in .lock .dock i { width:24px; height:24px; border-radius:50%; background:#ffffff38; backdrop-filter:blur(4px); }
+  .shot-in .disp iframe { position:absolute; left:0; top:0; width:412px; height:916px; border:0;
+    transform:scale(.4029); transform-origin:0 0; pointer-events:none; background:#111117; }
+
+  .hidden-gen { position:fixed; left:-5000px; top:0; width:400px; height:800px; border:0; }
+  .loading { background:linear-gradient(110deg, #1b1b24 30%, #262633 50%, #1b1b24 70%) 0 0/300% 100%;
+    animation:sh 1.2s linear infinite; }
+  @keyframes sh { to { background-position:-150% 0; } }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div>
+    <h1>Fluffee Wallpapers · store listing mockup</h1>
+    <p>Concept only, not a real listing. The ratings, downloads and reviews are made up. The screenshots are rendered live by the three generators.</p>
+  </div>
+  <div class="grow"></div>
+  <button class="shuffle" id="shuffle">🎲 Shuffle wallpapers</button>
+</div>
+
+<main>
+  <!-- ===== Listing as it would look on a phone ===== -->
+  <div class="device"><div class="screen">
+    <div class="status">
+      <span>12:30</span><span class="cam"></span>
+      <span><svg viewBox="0 0 54 14"><path d="M0 13h3V9H0zm5 0h3V6H5zm5 0h3V3h-3zm5 0h3V0h-3z"/><path d="M26 4a9 9 0 0 1 12 0l-1.5 1.6a7 7 0 0 0-9 0zm3 3.2a5 5 0 0 1 6 0L32 11z"/><rect x="42" y="2" width="10" height="10" rx="2"/><rect x="52.5" y="5" width="1.5" height="4"/></svg></span>
+    </div>
+    <div class="appbar">
+      <div class="ib"><svg viewBox="0 0 24 24"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z"/></svg></div>
+      <div class="sp"></div>
+      <div class="ib"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.8l-.3-.3A6.5 6.5 0 1 0 14 15.4l.3.3v.8l5 5 1.5-1.5zm-6 0a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"/></svg></div>
+      <div class="ib"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></div>
+    </div>
+    <div class="scroll">
+      <div class="head">
+        <img class="icon" src="../icons/icon-512.png" alt="">
+        <div>
+          <div class="title">Fluffee Wallpapers</div>
+          <div class="dev">Fluffee</div>
+          <div class="meta">No ads · No in-app purchases</div>
+        </div>
+      </div>
+      <div class="stats">
+        <div><b>4.8 ★</b><span>1.2K reviews</span></div>
+        <div><b>10K+</b><span>Downloads</span></div>
+        <div><b><span class="rated">3+</span></b><span>Rated for 3+</span></div>
+      </div>
+      <div class="install">Install</div>
+      <div class="wish"><svg viewBox="0 0 24 24"><path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2zm0 15-5-2.2L7 18V5h10z"/></svg>Add to wishlist</div>
+
+      <div class="carousel" id="miniCarousel"></div>
+
+      <div class="sec">
+        <div class="h">About this app <svg viewBox="0 0 24 24"><path d="m12 4-1.4 1.4 5.6 5.6H4v2h12.2l-5.6 5.6L12 20l8-8z"/></svg></div>
+        <p>Make your own wallpapers: silky waves, neon crystal shards or 3D stone tiles, rendered at the exact resolution of your screen. Hit Randomize until you like one, fine-tune it, then save it.</p>
+        <div class="muted" style="margin-top:14px"><b style="color:var(--ps-text);font-weight:500">Updated on</b><br>Nov 27, 2026</div>
+        <div class="chips"><span>Personalization</span><span>Wallpapers</span><span>Generative art</span><span>Offline</span></div>
+      </div>
+
+      <div class="sec">
+        <div class="h">Data safety <svg viewBox="0 0 24 24"><path d="m12 4-1.4 1.4 5.6 5.6H4v2h12.2l-5.6 5.6L12 20l8-8z"/></svg></div>
+        <p>Everything is generated on your device. Nothing you make is uploaded.</p>
+        <div class="card">
+          <div class="li"><svg viewBox="0 0 24 24"><path d="M18 16a3 3 0 0 0-2 .8L8.9 12.7a3 3 0 0 0 0-1.4L16 7.2A3 3 0 1 0 15 5l.1.7L8 9.8a3 3 0 1 0 0 4.4l7.1 4.2-.1.6a3 3 0 1 0 3-3z"/></svg><div>No data shared with third parties</div></div>
+          <div class="li"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7zM5 18v2h14v-2z"/></svg><div>No data collected</div></div>
+          <div class="li"><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5zm-2 16-4-4 1.4-1.4 2.6 2.6 6.6-6.6L18 9z"/></svg><div>Works fully offline<small>No account, no sign-in</small></div></div>
+          <a href="#">See details</a>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="h">Ratings and reviews <svg viewBox="0 0 24 24"><path d="m12 4-1.4 1.4 5.6 5.6H4v2h12.2l-5.6 5.6L12 20l8-8z"/></svg></div>
+        <div class="rating">
+          <div><div class="big">4.8</div><div class="stars">★★★★★</div><div class="muted" style="font-size:11px">1,214 reviews</div></div>
+          <div class="bars">
+            <div class="bar">5<i><b style="width:86%"></b></i></div>
+            <div class="bar">4<i><b style="width:9%"></b></i></div>
+            <div class="bar">3<i><b style="width:3%"></b></i></div>
+            <div class="bar">2<i><b style="width:1%"></b></i></div>
+            <div class="bar">1<i><b style="width:2%"></b></i></div>
+          </div>
+        </div>
+        <div class="review">
+          <div class="who"><div class="av" style="background:#f6a6c8">M</div>Maya K.</div>
+          <div class="stars">★★★★★<span>11/14/26</span></div>
+          <p>I keep hitting Randomize just to see what comes out. The wave ones look like silk, and they come out at my phone's exact size.</p>
+          <div class="helpful">42 people found this review helpful</div>
+        </div>
+        <div class="review">
+          <div class="who"><div class="av" style="background:#8fd3ff">D</div>Dan R.</div>
+          <div class="stars">★★★★★<span>11/02/26</span></div>
+          <p>The neon shards on an OLED screen look great. No ads, no account, and it works on a plane.</p>
+          <div class="helpful">18 people found this review helpful</div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="h">What's new</div>
+        <p>• New Tiles generator: 3D stone tiles under neon graphics<br>• Shows as "Wallpapers" on your home screen<br>• Save straight to Photos from the share sheet</p>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- ===== Store assets at a bigger size ===== -->
+  <div class="assets">
+    <section>
+      <h2>App icon <em>512 × 512</em></h2>
+      <div class="row" style="align-items:center">
+        <img class="bigicon" src="../icons/icon-512.png" alt="">
+        <img class="sm" src="../icons/icon-maskable-512.png" alt="">
+      </div>
+    </section>
+    <section>
+      <h2>Feature graphic <em>1024 × 500</em></h2>
+      <div id="fgBig"></div>
+    </section>
+    <section>
+      <h2>Phone screenshots <em>1080 × 1920</em></h2>
+      <div class="shots" id="bigShots"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+const GEN = { waves: "../index.html", shards: "../shards.html", tiles: "../tiles.html" };
+
+// [kind, generator or page, headline, subline]
+const SHOTS = [
+  ["wall", "waves",  "Silky waves",           "Soft-lit gradients, rendered on your GPU"],
+  ["wall", "shards", "Neon crystal shards",   "Low-poly blades with glowing edges"],
+  ["wall", "tiles",  "3D stone tiles",        "Under a layer of neon graphics"],
+  ["ui",   "index.html",  "Tune every detail",   "Palettes, layers, sheen, haze and more"],
+  ["ui",   "shards.html", "One tap to randomize", "Same seed, same image, every time"],
+  ["wall", "waves",  "Sized for your screen", "Full-resolution PNGs that work offline"],
+];
+
+const WAVE_PALETTES = ["Cotton Candy", "Sunset", "Ocean", "Aurora", "Midnight", "Neon", "Lavender"];
+
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html) e.innerHTML = html; return e; };
+
+// ---------- Hidden generator pages, used to render wallpapers ----------
+const gens = {};
+function gen(name) {
+  return gens[name] ||= new Promise(res => {
+    const f = el("iframe", "hidden-gen"); f.src = GEN[name];
+    f.onload = () => res(f.contentWindow);
+    document.body.appendChild(f);
+  });
+}
+async function renderWall(name, W, H) {
+  const win = await gen(name);
+  // The pages use top-level const/function, so eval inside the frame to reach them.
+  // Waves: stick to the colorful palettes, since grey looks dull in store art.
+  return name === "waves"
+    ? win.eval(`randomize(); { const p = ${JSON.stringify(WAVE_PALETTES)}; state.palette = p[(Math.random() * p.length) | 0];
+        state.colors = [...PALETTES[state.palette]]; } render(${W}, ${H}, 0); canvas.toDataURL("image/jpeg", 0.9)`)
+    : win.eval(`randomize(); (() => { const o = document.createElement("canvas"); o.width = ${W}; o.height = ${H};
+        render(o.getContext("2d"), ${W}, ${H}); return o.toDataURL("image/jpeg", 0.9); })()`);
+}
+
+// ---------- Builders, each scaled from a fixed design size ----------
+function scaled(cls, innerCls, designW, designH, width) {
+  const box = el("div", cls + " loading"), inner = el("div", innerCls);
+  const s = width / designW;
+  box.style.width = width + "px"; box.style.height = Math.round(designH * s) + "px";
+  inner.style.transform = `scale(${s})`;
+  box.appendChild(inner);
+  return [box, inner];
+}
+
+function featureGraphic(width) {
+  const [box, inner] = scaled("fgbox fg", "fg-in", 1024, 500, width);
+  inner.innerHTML = `<div class="shade"></div><div class="txt"><img src="../icons/icon-512.png" alt="">
+    <div><h3>Fluffee<br>Wallpapers</h3><p>Waves · Shards · Tiles, made for your screen</p></div></div>`;
+  return box;
+}
+
+function screenshot(i, width) {
+  const [kind, src, title, sub] = SHOTS[i];
+  const [box, inner] = scaled("shot", "shot-in", 270, 480, width);
+  inner.innerHTML = `<div class="bgimg"></div><div class="copy"><b>${title}</b><span>${sub}</span></div>
+    <div class="phone"><div class="disp"></div></div>`;
+  box.dataset.shot = i;
+  const disp = inner.querySelector(".disp");
+  if (kind === "wall") {
+    disp.innerHTML = `<div class="lock"><div class="d">Friday, November 27</div><div class="t">12:30</div>
+      <div class="dock"><i></i><i></i><i></i><i></i></div></div>`;
+  } else {
+    const f = el("iframe"); f.src = "../" + src; f.tabIndex = -1;
+    f.onload = () => {
+      const w = f.contentWindow;
+      const st = w.document.createElement("style");
+      st.textContent = "html{scrollbar-width:none} ::-webkit-scrollbar{display:none}";
+      w.document.head.appendChild(st);
+      // Portrait output so the preview looks like a phone wallpaper, not the desktop monitor size.
+      w.eval("randomize(); state.w = 1080; state.h = 2400; syncUI(); draw();");
+      box.classList.remove("loading");
+    };
+    disp.appendChild(f);
+  }
+  return box;
+}
+
+// ---------- Layout ----------
+const mini = document.getElementById("miniCarousel");
+const fgSmall = featureGraphic(300);
+mini.appendChild(fgSmall);
+SHOTS.forEach((_, i) => mini.appendChild(screenshot(i, 83)));
+
+const fgBig = featureGraphic(640);
+document.getElementById("fgBig").appendChild(fgBig);
+const big = document.getElementById("bigShots");
+SHOTS.forEach((_, i) => big.appendChild(screenshot(i, 216)));
+
+function setImg(nodes, url) {
+  nodes.forEach(n => { n.style.backgroundImage = `url(${url})`; n.closest(".loading")?.classList.remove("loading"); });
+}
+
+async function paint() {
+  const btn = document.getElementById("shuffle");
+  btn.disabled = true;
+  try {
+    const fg = await renderWall("waves", 2048, 1000);
+    setImg([fgSmall, fgBig].map(b => b.querySelector(".fg-in")), fg);
+    for (let i = 0; i < SHOTS.length; i++) {
+      if (SHOTS[i][0] !== "wall") continue;
+      const url = await renderWall(SHOTS[i][1], 1080, 2400);
+      const boxes = document.querySelectorAll(`.shot[data-shot="${i}"]`);
+      setImg([...boxes].flatMap(b => [b.querySelector(".bgimg"), b.querySelector(".disp")]), url);
+    }
+    document.querySelectorAll(".shot iframe").forEach(f => {
+      try { f.contentWindow.eval("randomize()"); } catch {}
+    });
+  } finally { btn.disabled = false; }
+}
+document.getElementById("shuffle").addEventListener("click", paint);
+paint();
+</script>
+</body>
+</html>
