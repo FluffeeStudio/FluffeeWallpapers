@@ -1,6 +1,7 @@
 // Network-first: always fresh when online, falls back to the cached copy offline.
-const CACHE = "fluffee-v3";
-const FILES = ["./", "index.html", "shards.html", "tiles.html", "pwa.js", "common.css", "manifest.webmanifest",
+const CACHE = "fluffee-v4";
+const FILES = ["./", "index.html", "shards.html", "tiles.html", "liquid.html", "blocks.html", "lattice.html", "shells.html", "satin.html",
+  "pwa.js", "common.css", "studio.js", "studio.css", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

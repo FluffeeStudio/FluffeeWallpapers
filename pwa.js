@@ -1,4 +1,15 @@
-// Shared by both generator pages: device-sized output, phone-friendly saving, offline support.
+// Shared by all generator pages: style tabs, device-sized output, phone-friendly saving, offline support.
+
+const PAGES = [
+  ["index.html", "〰", "Waves"], ["shards.html", "◆", "Shards"], ["tiles.html", "⬢", "Tiles"], ["liquid.html", "◉", "Liquid"],
+  ["blocks.html", "▦", "Blocks"], ["lattice.html", "⌗", "Lattice"], ["shells.html", "◐", "Shells"], ["satin.html", "≋", "Satin"],
+];
+{
+  const tabs = document.querySelector(".tabs");
+  const here = location.pathname.split("/").pop() || "index.html";
+  if (tabs) tabs.innerHTML = PAGES.map(([href, icon, name]) =>
+    `<a href="${href}"${href === here ? ' class="on"' : ""}>${icon} ${name}</a>`).join("");
+}
 
 const isPhone = matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 900;
 

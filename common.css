@@ -1,6 +1,10 @@
 /* Shared phone layout and save sheet, loaded after each page's own styles. */
 button, select, input, .tabs a { touch-action: manipulation; }
 
+/* Eight styles: tabs wrap into two rows of four. */
+.tabs { flex-wrap: wrap; }
+.tabs a { flex: 1 0 calc(25% - 3px); white-space: nowrap; font-size: 12px; }
+
 @media (max-width: 760px) {
   html, body { height: auto; }
   body { display: block; }

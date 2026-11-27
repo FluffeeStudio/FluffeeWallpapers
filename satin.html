@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fluffee Wallpapers · Satin</title>
+<link rel="stylesheet" href="studio.css">
+<style>:root { --accent:#b9b9c4; }</style>
+<meta name="theme-color" content="#111117">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wallpapers">
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas></div>
+<aside><div class="tabs"></div></aside>
+
+<script src="pwa.js"></script>
+<script src="studio.js"></script>
+<script>
+// Draped satin: overlapping sheets of fabric, each with a crisp fold line and a long soft fall-off,
+// shaded as a height map under a low, raking light.
+const MAX = 14;
+const FS = `
+precision highp float;
+uniform vec2 uRes;
+uniform vec4 uF[${MAX}];         // per fold: position across, phase 1, phase 2, height
+uniform vec4 uSeed;
+uniform vec3 uC[3];              // shadow, cloth, sheen
+uniform float uFolds, uAngle, uBend, uFreq, uCrease, uSoft, uSwell, uLight, uSheen, uContrast, uFalloff, uGrain;
+
+float softplus(float x, float k){ return max(x, 0.) + k * log(1. + exp(-abs(x) / k)); }
+
+float height(vec2 uv){
+  float a = radians(uAngle);
+  vec2 d = vec2(cos(a), sin(a)), n = vec2(-d.y, d.x);
+  float u = dot(uv, d), v = dot(uv, n);
+  float sharp = mix(.05, .005, uCrease), fall = mix(.25, 1.6, uSoft);
+  float h = uSwell * .25 * sin(v * 2.1 + u * .7 + uSeed.x) + uSwell * .12 * sin(u * 1.3 - v * .8 + uSeed.y);
+  for (int i = 0; i < ${MAX}; i++){
+    if (float(i) >= uFolds) break;
+    vec4 F = uF[i];
+    float f = uFreq * 6.2832;
+    float c = F.x + uBend * .22 * (.68 * sin(u * f * .5 + F.y) + .32 * sin(u * f * 1.13 + F.z));
+    float x = softplus(v - c, sharp);                  // 0 before the fold line, then grows
+    h += F.w * (1. - exp(-x / sharp)) * (.2 * exp(-x / fall) + .12 * exp(-x / (sharp * 6. + .015)));   // sheet + rolled lip
+  }
+  return h;
+}
+
+void main(){
+  vec2 uv = (gl_FragCoord.xy - .5 * uRes) / uRes.y;
+  float e = 1.2 / uRes.y;
+  float h = height(uv);
+  vec2 g = vec2(height(uv + vec2(e, 0.)) - h, height(uv + vec2(0., e)) - h) / e;
+  vec3 N = normalize(vec3(-g * .7, 1.));
+
+  float la = radians(uLight);
+  vec3 L = normalize(vec3(cos(la), sin(la), .45));
+  vec3 Hv = normalize(L + vec3(0., 0., 1.));
+  float diff = max(dot(N, L), 0.);
+  float lum = pow(clamp(diff * 1.5, 0., 1.), mix(.8, 2.6, uContrast));
+  vec3 col = mix(uC[0], uC[1], lum);
+  float spec = pow(max(dot(N, Hv), 0.), 26.);
+  col += uC[2] * spec * uSheen * .55;
+  col = mix(col, uC[2], pow(clamp(diff * 1.25, 0., 1.), 7.) * uSheen * .45);   // satin glint along lit slopes
+
+  // light pools on the side the light comes from and fades away from it
+  vec2 ld = vec2(cos(la), sin(la));
+  float pool = smoothstep(-1.1, .9, dot(uv, ld) * 1.1);
+  col = mix(col * mix(1., .25, uFalloff), col, pool);
+  col = mix(col, uC[0], uFalloff * .35 * smoothstep(.2, 1., length(uv * vec2(.6, 1.)) ));
+
+  col += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - .5) * (.006 + uGrain * .05);
+  gl_FragColor = vec4(clamp(col, 0., 1.), 1.);
+}`;
+
+Studio.create({
+  file: "satin",
+  sub: "Dark draped satin with soft folds",
+  colorHint: "Shadow · Cloth · Sheen",
+  seed: 4,
+  palettes: {
+    "Onyx":      ["#000000", "#2a2a2d", "#9a9aa2"],
+    "Graphite":  ["#050506", "#3d3e43", "#c8c9d2"],
+    "Midnight":  ["#01030a", "#1a2547", "#8fa8ff"],
+    "Wine":      ["#070102", "#4a0f1c", "#ff8aa0"],
+    "Emerald":   ["#010604", "#0f3b2c", "#7dffc8"],
+    "Plum":      ["#050208", "#36204d", "#d7a8ff"],
+    "Champagne": ["#2a2218", "#c9b391", "#fff4dc"],
+    "Pearl":     ["#5c5c63", "#d8d8de", "#ffffff"],
+  },
+  groups: [
+    ["Folds", [
+      ["folds",   "Folds",       1, 14, 1,     7],
+      ["angle",   "Direction",  -80, 80, 1,   -22],
+      ["bend",    "Bend",        0, 1, 0.01,  0.55],
+      ["freq",    "Ripple",      0.1, 1.5, 0.01, 0.45],
+      ["crease",  "Crease",      0, 1, 0.01,  0.75],
+      ["soft",    "Softness",    0, 1, 0.01,  0.55],
+      ["swell",   "Swell",       0, 1, 0.01,  0.4],
+    ]],
+    ["Light", [
+      ["light",   "Light angle", 0, 360, 1,   120],
+      ["sheen",   "Sheen",       0, 1, 0.01,  0.55],
+      ["contrast","Contrast",    0, 1, 0.01,  0.45],
+      ["falloff", "Falloff",     0, 1, 0.01,  0.55],
+      ["grain",   "Grain",       0, 1, 0.01,  0.15],
+    ]],
+  ],
+  webgl: true,
+  init(gl) {
+    const U = Studio.glProgram(gl, FS);
+    const map = { folds: "uFolds", angle: "uAngle", bend: "uBend", freq: "uFreq", crease: "uCrease", soft: "uSoft", swell: "uSwell",
+      light: "uLight", sheen: "uSheen", contrast: "uContrast", falloff: "uFalloff", grain: "uGrain" };
+    return (W, H, S) => {
+      const rnd = Studio.rng(S.seed);
+      const span = Math.hypot(W / H, 1) * 0.55, F = [];
+      for (let i = 0; i < MAX; i++) {
+        const t = S.folds > 1 ? i / (S.folds - 1) : 0.5;
+        F.push(-span + 2 * span * (t + (rnd() - 0.5) * 0.6 / Math.max(S.folds, 1)), rnd() * 6.283, rnd() * 6.283, 0.35 + rnd() * 0.9);
+      }
+      gl.uniform2f(U("uRes"), W, H);
+      gl.uniform4fv(U("uF"), F);
+      gl.uniform4f(U("uSeed"), rnd() * 6.283, rnd() * 6.283, 0, 0);
+      gl.uniform3fv(U("uC"), S.colors.flatMap(c => Studio.hexToRgb(c).map(v => v / 255)));
+      for (const k in map) gl.uniform1f(U(map[k]), S[k]);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    };
+  },
+  randomize: lerp => ({
+    folds: lerp(4, 11), angle: lerp(-40, 10), bend: lerp(0.3, 0.85), freq: lerp(0.25, 0.8), crease: lerp(0.5, 0.95), soft: lerp(0.3, 0.8),
+    swell: lerp(0.15, 0.7), light: lerp(90, 150), sheen: lerp(0.3, 0.8), contrast: lerp(0.25, 0.7), falloff: lerp(0.3, 0.75),
+  }),
+});
+</script>
+</body>
+</html>

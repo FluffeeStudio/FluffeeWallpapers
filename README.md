@@ -7,10 +7,15 @@ Wallpaper generators that run in the browser, with no install and no dependencie
 | `index.html` (Waves) | Silky, soft-lit waves and pastel gradients (WebGL) |
 | `shards.html` (Shards) | Dark low-poly crystal blades with neon glowing edges (Canvas 2D) |
 | `tiles.html` (Tiles) | 3D grey stone tiles with side walls and shadows, under a neon graphics layer of bars, lines, dot grids, dashes and ticks (Canvas 2D) |
+| `liquid.html` (Liquid) | Glossy molten ribbons in layers, some glowing from inside (WebGL) |
+| `blocks.html` (Blocks) | A wall of 3D blocks pushed out by different amounts, in perspective (Canvas 2D) |
+| `lattice.html` (Lattice) | Stacked dark paper sheets cut into a web of struts with rounded openings (Canvas 2D) |
+| `shells.html` (Shells) | Dark nested shells with hair-thin rim light (Canvas 2D) |
+| `satin.html` (Satin) | Dark draped satin with soft folds (WebGL) |
 
 ## Use
 
-Double-click `index.html` (or `shards.html` / `tiles.html`) to open it in any modern browser. Both pages share the same layout:
+Double-click `index.html` (or any other page) to open it in any modern browser. All pages share the same layout:
 
 - **🎲 Randomize** (or `Space`) picks a random palette, seed and wave settings.
 - **Seed** sets the wave shapes. The same seed with the same settings gives the same image.
@@ -23,6 +28,8 @@ Double-click `index.html` (or `shards.html` / `tiles.html`) to open it in any mo
 Shards has its own sliders: shard count, direction, chaos, length, thickness, how many shards glow, glow size, lit faces, streaks, hollow frames, facet contrast, edge sheen, depth blur, ambient glow, light angle and grain. Its palettes are Crimson, Cyber Blue, Toxic, Gold, Violet, Magenta, Ember, Ice, Mono and Daylight.
 
 Tiles has two groups of sliders. **Tiles:** count, irregularity, relief (height), face tilt, gap, edge sheen, shadows and light angle. **Graphics:** amount, direction, number of bands, band spread, bar size, opacity, dots & ticks, glow and grain. Its palettes are Cyan, Lime, Orange, Hot Pink, Violet, Gold, Red, Mint, Graphite and Concrete.
+
+Liquid, Blocks, Lattice, Shells and Satin each have their own palettes and sliders, grouped into shape and light sections. These five pages share their panel code through `studio.js` and `studio.css`, so a page only holds its palettes, sliders and renderer. To add a style, copy one of them and add it to the `PAGES` list in `pwa.js` and the file list in `sw.js`.
 
 Waves renders on the GPU with a WebGL shader. Shards draws with Canvas 2D, and a 4K export takes about half a second.
 
@@ -40,4 +47,4 @@ To install it as an app, it has to be served over **HTTPS**:
 
 For a quick test on your home Wi-Fi, run `python -m http.server 8765` in this folder and open `http://<your-PC-IP>:8765` on the phone. That works in the phone's browser, but plain HTTP can't be installed or run offline.
 
-Files: `manifest.webmanifest` (app info), `sw.js` (offline cache), `pwa.js` + `common.css` (shared phone code), and `icons/`.
+Files: `manifest.webmanifest` (app info), `sw.js` (offline cache), `pwa.js` + `common.css` (shared phone code and style tabs), `studio.js` + `studio.css` (shared panel for the newer pages), and `icons/`.

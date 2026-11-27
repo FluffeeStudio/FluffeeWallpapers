@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fluffee Wallpapers · Blocks</title>
+<link rel="stylesheet" href="studio.css">
+<style>:root { --accent:#9aa3b5; }</style>
+<meta name="theme-color" content="#111117">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wallpapers">
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas></div>
+<aside><div class="tabs"></div></aside>
+
+<script src="pwa.js"></script>
+<script src="studio.js"></script>
+<script>
+// A wall of square blocks pushed out by different amounts, seen head-on in perspective.
+const { rng, hexToRgb, clamp, mixc, rgba, finish } = Studio;
+const SIZES = [[2, 1], [1, 2], [2, 2], [3, 1], [1, 3], [3, 2], [2, 3], [3, 3], [4, 2], [2, 4]];
+
+function render(ctx, W, H, S) {
+  const rnd = rng(S.seed);
+  const [bg, block, light, accent] = S.colors.map(hexToRgb);
+  const cell = Math.sqrt(W * H) / S.count;
+  const cols = Math.ceil(W / cell) + 2, rows = Math.ceil(H / cell) + 2;
+  const ox = (W - cols * cell) / 2, oy = (H - rows * cell) / 2;
+  const cx = W / 2, cy = H / 2;
+  const F = Math.max(W, H) * (0.35 + 3 * (1 - S.persp) ** 2);
+  const P = (x, y, z) => { const k = F / (F - z); return [cx + (x - cx) * k, cy + (y - cy) * k]; };
+  const la = S.light * Math.PI / 180, L2 = [Math.cos(la), -Math.sin(la)];
+
+  // Place blocks: walk the grid in random order, try a larger footprint first
+  const used = new Uint8Array(cols * rows);
+  const order = Array.from({ length: cols * rows }, (_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) { const j = (rnd() * (i + 1)) | 0; [order[i], order[j]] = [order[j], order[i]]; }
+  const free = (c, r, w, h) => {
+    if (c + w > cols || r + h > rows) return false;
+    for (let y = r; y < r + h; y++) for (let x = c; x < c + w; x++) if (used[y * cols + x]) return false;
+    return true;
+  };
+  const ph = Array.from({ length: 6 }, () => rnd() * 6.283);
+  const fieldAt = (x, y) => (Math.sin(x * 2.1 + ph[0]) * Math.cos(y * 1.7 + ph[1]) + 0.6 * Math.sin(x * 4.3 - y * 3.1 + ph[2])
+    + 0.4 * Math.sin(y * 5.7 + x * 1.3 + ph[3])) / 2;
+  const blocks = [];
+  for (const idx of order) {
+    const c = idx % cols, r = (idx / cols) | 0;
+    const roll = rnd(), pick = SIZES[(rnd() * SIZES.length) | 0], jit = rnd(), acc = rnd();
+    if (used[idx]) continue;
+    let [w, h] = roll < S.merge * 0.6 && free(c, r, pick[0], pick[1]) ? pick : [1, 1];
+    for (let y = r; y < r + h; y++) for (let x = c; x < c + w; x++) used[y * cols + x] = 1;
+    const x0 = ox + c * cell, y0 = oy + r * cell;
+    const fx = (x0 + w * cell / 2) / Math.max(W, H), fy = (y0 + h * cell / 2) / Math.max(W, H);
+    const t = clamp(0.5 + 0.5 * (S.cluster * fieldAt(fx * 3, fy * 3) + (1 - S.cluster) * (jit * 2 - 1)), 0, 1);
+    blocks.push({ x0, y0, x1: x0 + w * cell, y1: y0 + h * cell, z: S.depth * cell * 4 * t ** 1.5, accent: acc < S.accent * 0.12 });
+  }
+  blocks.sort((a, b) => a.z - b.z);
+  const zMax = S.depth * cell * 4 || 1;
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; ctx.shadowBlur = 0; ctx.filter = "none";
+  ctx.fillStyle = rgba(bg); ctx.fillRect(0, 0, W, H);
+  const poly = pts => { ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); };
+  const gap = cell * S.gap * 0.06;
+  const tone = z => mixc(bg, block, 0.35 + 0.65 * (1 - S.fog * (1 - z / zMax)));
+
+  for (const b of blocks) {
+    const x0 = b.x0 + gap, y0 = b.y0 + gap, x1 = b.x1 - gap, y1 = b.y1 - gap, z = b.z;
+    const base = tone(z);
+
+    // Soft shadow on the blocks behind, falling away from the light
+    if (S.shadow > 0 && z > 0) {
+      for (let j = 3; j >= 1; j--) {
+        const o = z * 0.55 * j / 3, g = cell * 0.05 * j;
+        const zs = z * 0.6;
+        const a = P(x0 - g - L2[0] * o, y0 - g - L2[1] * o, zs), c = P(x1 + g - L2[0] * o, y1 + g - L2[1] * o, zs);
+        ctx.fillStyle = rgba([0, 0, 0], S.shadow * 0.16);
+        ctx.fillRect(a[0], a[1], c[0] - a[0], c[1] - a[1]);
+      }
+    }
+
+    // Side walls that face the viewer: darker towards the wall (ambient occlusion)
+    const sides = [];
+    if (cx < x0) sides.push([[x0, y0], [x0, y1], [-1, 0]]);
+    if (cx > x1) sides.push([[x1, y1], [x1, y0], [1, 0]]);
+    if (cy < y0) sides.push([[x1, y0], [x0, y0], [0, -1]]);
+    if (cy > y1) sides.push([[x0, y1], [x1, y1], [0, 1]]);
+    if (z > 0.5) for (const [a, c, n] of sides) {
+      const fa = P(a[0], a[1], z), fc = P(c[0], c[1], z), ba = P(a[0], a[1], 0), bc = P(c[0], c[1], 0);
+      const lit = clamp(0.55 + 0.45 * (n[0] * L2[0] + n[1] * L2[1]), 0.15, 1);
+      const sc = mixc(bg, base, 0.12 + 0.55 * lit);
+      const g = ctx.createLinearGradient((fa[0] + fc[0]) / 2, (fa[1] + fc[1]) / 2, (ba[0] + bc[0]) / 2, (ba[1] + bc[1]) / 2);
+      g.addColorStop(0, rgba(sc)); g.addColorStop(1, rgba(mixc(sc, bg, 0.75 * S.shadow + 0.1)));
+      poly([fa, fc, bc, ba]); ctx.fillStyle = g; ctx.fill();
+    }
+
+    // Front face, lit a little more on the light side
+    const a = P(x0, y0, z), c = P(x1, y1, z);
+    const fw = c[0] - a[0], fh = c[1] - a[1];
+    const gx = (a[0] + c[0]) / 2, gy = (a[1] + c[1]) / 2, gr = Math.max(fw, fh) * 0.6;
+    const face = b.accent ? accent : base;
+    const g = ctx.createLinearGradient(gx + L2[0] * gr, gy + L2[1] * gr, gx - L2[0] * gr, gy - L2[1] * gr);
+    g.addColorStop(0, rgba(mixc(face, light, 0.12)));
+    g.addColorStop(1, rgba(mixc(face, bg, 0.12)));
+    if (b.accent) { ctx.shadowColor = rgba(accent, 0.8); ctx.shadowBlur = cell * 0.6; }
+    ctx.fillStyle = g; ctx.fillRect(a[0], a[1], fw, fh);
+    ctx.shadowBlur = 0;
+
+    // Bevel: bright edges toward the light, dark ones away from it
+    if (S.bevel > 0) {
+      const lw = Math.max(1, cell * 0.025);
+      const edges = [[[a[0], a[1]], [c[0], a[1]], [0, -1]], [[c[0], a[1]], [c[0], c[1]], [1, 0]],
+                     [[c[0], c[1]], [a[0], c[1]], [0, 1]], [[a[0], c[1]], [a[0], a[1]], [-1, 0]]];
+      ctx.lineWidth = lw;
+      for (const [p, q, n] of edges) {
+        const f = n[0] * L2[0] + n[1] * L2[1];
+        ctx.strokeStyle = f > 0 ? rgba(light, 0.45 * f * S.bevel) : rgba([0, 0, 0], -0.5 * f * S.bevel);
+        ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+      }
+    }
+  }
+
+  // Cool light falling in from one side
+  const lg = ctx.createLinearGradient(cx + L2[0] * W * 0.6, cy + L2[1] * H * 0.6, cx - L2[0] * W * 0.6, cy - L2[1] * H * 0.6);
+  lg.addColorStop(0, rgba(light, 0.06 * S.glow)); lg.addColorStop(1, rgba([0, 0, 0], 0.35 * S.glow));
+  ctx.fillStyle = lg; ctx.fillRect(0, 0, W, H);
+  finish(ctx, W, H, 0.55, S.grain);
+}
+
+Studio.create({
+  file: "blocks",
+  sub: "A wall of 3D blocks in perspective",
+  colorHint: "Background · Blocks · Light · Accent",
+  seed: 12,
+  palettes: {
+    "Graphite":   ["#060607", "#4a4d54", "#c9d3e6", "#2fd6f0"],
+    "Charcoal":   ["#030303", "#353535", "#e0e0e0", "#ff3b3b"],
+    "Slate":      ["#05070b", "#3f4a5c", "#b9cff2", "#7aa2ff"],
+    "Bone":       ["#3a3631", "#d8d2c8", "#fff8ec", "#ff7a2f"],
+    "Concrete":   ["#2b2d30", "#9a9ea6", "#ffffff", "#ffc21a"],
+    "Terracotta": ["#140805", "#8a4630", "#ffd2b8", "#ffd27a"],
+    "Sage":       ["#0a0f0c", "#55685c", "#dff2e4", "#b6ff5c"],
+    "Navy":       ["#02040a", "#1f2b4a", "#9fb8ff", "#ff4fa8"],
+  },
+  groups: [
+    ["Blocks", [
+      ["count",   "Blocks",       6, 60, 1,     22],
+      ["merge",   "Big blocks",   0, 1, 0.01,   0.45],
+      ["depth",   "Depth",        0, 1, 0.01,   0.6],
+      ["cluster", "Clustering",   0, 1, 0.01,   0.35],
+      ["gap",     "Gap",          0, 1, 0.01,   0.15],
+      ["persp",   "Perspective",  0, 1, 0.01,   0.55],
+      ["accent",  "Accent blocks",0, 1, 0.01,   0],
+    ]],
+    ["Light", [
+      ["light",   "Light angle",  0, 360, 1,    120],
+      ["bevel",   "Edge sheen",   0, 1, 0.01,   0.45],
+      ["shadow",  "Shadows",      0, 1, 0.01,   0.7],
+      ["fog",     "Depth fog",    0, 1, 0.01,   0.5],
+      ["glow",    "Falloff",      0, 1, 0.01,   0.6],
+      ["grain",   "Grain",        0, 1, 0.01,   0.15],
+    ]],
+  ],
+  render,
+  randomize: (lerp, r) => ({
+    count: lerp(12, 40), merge: lerp(0.2, 0.8), depth: lerp(0.35, 0.9), cluster: lerp(0, 0.7), gap: lerp(0.05, 0.4), persp: lerp(0.3, 0.8),
+    accent: r() < 0.3 ? lerp(0.2, 0.8) : 0, light: lerp(70, 150), bevel: lerp(0.25, 0.7), shadow: lerp(0.4, 0.9), fog: lerp(0.3, 0.7), glow: lerp(0.3, 0.8),
+  }),
+});
+</script>
+</body>
+</html>

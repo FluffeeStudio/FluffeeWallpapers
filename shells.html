@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fluffee Wallpapers · Shells</title>
+<link rel="stylesheet" href="studio.css">
+<style>:root { --accent:#d9d9e3; }</style>
+<meta name="theme-color" content="#111117">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wallpapers">
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas></div>
+<aside><div class="tabs"></div></aside>
+
+<script src="pwa.js"></script>
+<script src="studio.js"></script>
+<script>
+// Nested dark shells receding into the distance, each outlined by a hair-thin rim of light
+// and a soft satin glow just inside the lit edge.
+const { rng, hexToRgb, mixc, rgba, finish } = Studio;
+
+function shellPath(c, r, aspect, rot, wob, ph) {
+  const p = new Path2D(), N = 160;
+  for (let i = 0; i <= N; i++) {
+    const t = i / N * Math.PI * 2;
+    const rr = r * (1 + wob * (0.09 * Math.sin(2 * t + ph[0]) + 0.05 * Math.sin(3 * t + ph[1]) + 0.025 * Math.sin(5 * t + ph[2])));
+    const x = Math.cos(t) * rr, y = Math.sin(t) * rr * aspect;
+    const px = c[0] + x * Math.cos(rot) - y * Math.sin(rot), py = c[1] + x * Math.sin(rot) + y * Math.cos(rot);
+    i ? p.lineTo(px, py) : p.moveTo(px, py);
+  }
+  p.closePath();
+  return p;
+}
+
+function render(ctx, W, H, S) {
+  const rnd = rng(S.seed);
+  const [bg, body, rim, tint] = S.colors.map(hexToRgb);
+  const U = Math.sqrt(W * H) * 0.75, s = U / 1080;
+  const la = S.light * Math.PI / 180, L = [Math.cos(la), -Math.sin(la)];
+  const da = S.direction * Math.PI / 180, d = [Math.cos(da), -Math.sin(da)], perp = [-d[1], d[0]];
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; ctx.shadowBlur = 0; ctx.filter = "none";
+  const bgg = ctx.createRadialGradient(W / 2 + L[0] * W * 0.3, H / 2 + L[1] * H * 0.3, 0, W / 2, H / 2, Math.hypot(W, H) * 0.7);
+  bgg.addColorStop(0, rgba(mixc(bg, rim, 0.05))); bgg.addColorStop(1, rgba(bg));
+  ctx.fillStyle = bgg; ctx.fillRect(0, 0, W, H);
+
+  // Shells from the front (big) to the back; each one further back peeks out along the direction
+  const R = U * 0.62 * S.size;
+  const front = [W / 2 - d[0] * R * 0.75 + perp[0] * (rnd() - 0.5) * R * 0.5, H / 2 - d[1] * R * 0.75 + perp[1] * (rnd() - 0.5) * R * 0.5];
+  const k = 0.97 - 0.12 * S.spacing;
+  const baseRot = Math.atan2(d[1], d[0]) + (rnd() - 0.5) * 0.8, aspect0 = 0.7 + rnd() * 0.25;
+  const shells = [];
+  let c = front, r = R;
+  for (let i = 0; i < S.count; i++) {
+    shells.push({ c, r, aspect: aspect0 * (0.9 + rnd() * 0.15), rot: baseRot + (rnd() - 0.5) * 0.25 * S.wobble + i * 0.04 * S.wobble,
+      ph: [rnd() * 6.283, rnd() * 6.283, rnd() * 6.283] });
+    const step = r * (0.06 + 0.3 * S.spacing);
+    const bend = (rnd() - 0.5) * 0.35 * S.wobble;
+    c = [c[0] + (d[0] + perp[0] * bend) * step, c[1] + (d[1] + perp[1] * bend) * step];
+    r *= k;
+  }
+
+  for (let i = shells.length - 1; i >= 0; i--) {
+    const sh = shells[i];
+    const path = shellPath(sh.c, sh.r, sh.aspect, sh.rot, S.wobble, sh.ph);
+    const lx0 = sh.c[0] - L[0] * sh.r, ly0 = sh.c[1] - L[1] * sh.r, lx1 = sh.c[0] + L[0] * sh.r, ly1 = sh.c[1] + L[1] * sh.r;
+
+    // Shadow on the shells behind
+    ctx.save();
+    ctx.shadowColor = rgba([0, 0, 0], 0.5 + 0.45 * S.shadow);
+    ctx.shadowBlur = (20 + 120 * S.shadow) * s;
+    ctx.shadowOffsetX = d[0] * 25 * s * S.shadow; ctx.shadowOffsetY = d[1] * 25 * s * S.shadow;
+    ctx.fillStyle = rgba(body); ctx.fill(path);
+    ctx.restore();
+
+    // Satin body: soft light pooling inside the lit edge
+    ctx.save();
+    ctx.clip(path);
+    const bodyG = ctx.createLinearGradient(lx1, ly1, lx0, ly0);
+    bodyG.addColorStop(0, rgba(mixc(body, rim, 0.1 * S.sheen)));
+    bodyG.addColorStop(0.55, rgba(body));
+    bodyG.addColorStop(1, rgba(mixc(body, bg, 0.6)));
+    ctx.fillStyle = bodyG; ctx.fill(path);
+    if (S.sheen > 0) {
+      const edgeG = ctx.createLinearGradient(lx0, ly0, lx1, ly1);
+      edgeG.addColorStop(0, rgba(tint, 0)); edgeG.addColorStop(0.6, rgba(tint, 0.05 * S.sheen)); edgeG.addColorStop(1, rgba(rim, 0.3 * S.sheen));
+      ctx.filter = `blur(${sh.r * 0.07}px)`;
+      ctx.lineWidth = sh.r * 0.18; ctx.strokeStyle = edgeG; ctx.stroke(path);
+      ctx.filter = "none";
+    }
+    ctx.restore();
+
+    // Hair-thin rim light, brightest where the edge faces the light, with an inner lip line
+    const rimG = ctx.createLinearGradient(lx0, ly0, lx1, ly1);
+    rimG.addColorStop(0, rgba(tint, 0)); rimG.addColorStop(0.35, rgba(tint, 0.3 * S.rim)); rimG.addColorStop(0.7, rgba(rim, 0.75 * S.rim)); rimG.addColorStop(1, rgba(rim, S.rim));
+    ctx.save();
+    ctx.lineWidth = (0.8 + 3.5 * S.rimw) * s;
+    ctx.shadowColor = rgba(rim, 0.7 * S.rim); ctx.shadowBlur = (2 + 10 * S.rimw) * s;
+    ctx.strokeStyle = rimG; ctx.stroke(path);
+    if (S.lip > 0) {
+      const inner = shellPath(sh.c, sh.r * (1 - 0.035 * S.lip), sh.aspect, sh.rot, S.wobble, sh.ph);
+      ctx.globalAlpha = 0.55; ctx.lineWidth *= 0.7; ctx.stroke(inner);
+    }
+    ctx.restore();
+  }
+  finish(ctx, W, H, 0.5, S.grain);
+}
+
+Studio.create({
+  file: "shells",
+  sub: "Dark nested shells with thin rim light",
+  colorHint: "Background · Body · Rim · Rim tint",
+  seed: 5,
+  palettes: {
+    "Onyx":      ["#000000", "#0b0b0c", "#f2f2f6", "#a49c94"],
+    "Titanium":  ["#030406", "#121519", "#d9e8ff", "#7d8ea8"],
+    "Copper":    ["#050302", "#140d0a", "#ffc9a3", "#c8663a"],
+    "Rose":      ["#060304", "#160c10", "#ffd0dc", "#d0607e"],
+    "Aqua":      ["#010405", "#081316", "#b4fff5", "#2aa8b8"],
+    "Violet":    ["#040208", "#110b1c", "#e2cbff", "#7a4fd8"],
+    "Ember":     ["#060201", "#140806", "#ffb36b", "#ff3d1f"],
+    "Pearl":     ["#a5a39e", "#dcd9d3", "#ffffff", "#b9b2a7"],
+  },
+  groups: [
+    ["Shape", [
+      ["count",     "Shells",       1, 10, 1,    4],
+      ["size",      "Size",         0.3, 1.6, 0.01, 1],
+      ["spacing",   "Spacing",      0, 1, 0.01,  0.45],
+      ["direction", "Direction",    0, 360, 1,   10],
+      ["wobble",    "Wobble",       0, 1, 0.01,  0.5],
+      ["lip",       "Lip",          0, 1, 0.01,  0.4],
+    ]],
+    ["Light", [
+      ["light",     "Light angle",  0, 360, 1,   60],
+      ["rim",       "Rim light",    0, 1, 0.01,  0.85],
+      ["rimw",      "Rim width",    0, 1, 0.01,  0.25],
+      ["sheen",     "Sheen",        0, 1, 0.01,  0.5],
+      ["shadow",    "Shadows",      0, 1, 0.01,  0.7],
+      ["grain",     "Grain",        0, 1, 0.01,  0.15],
+    ]],
+  ],
+  render,
+  randomize: lerp => ({
+    count: lerp(2, 7.99), size: lerp(0.7, 1.3), spacing: lerp(0.2, 0.8), direction: lerp(0, 360), wobble: lerp(0.2, 0.8), lip: lerp(0, 0.8),
+    light: lerp(0, 360), rim: lerp(0.6, 1), rimw: lerp(0.1, 0.5), sheen: lerp(0.3, 0.8), shadow: lerp(0.5, 0.9),
+  }),
+});
+</script>
+</body>
+</html>
