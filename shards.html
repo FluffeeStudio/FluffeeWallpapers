@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fluffee Wallpapers · Shards</title>
+<style>
+  :root { --bg:#111117; --panel:#1b1b24; --line:#2c2c3a; --text:#e8e6f0; --dim:#9a97ab; --accent:#ff2a4a; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text);
+    font:13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  body { display:flex; }
+  #stage { flex:1; display:flex; align-items:center; justify-content:center; padding:24px; min-width:0; }
+  #c { max-width:100%; max-height:100%; border-radius:10px; box-shadow:0 20px 60px #0008; background:#000; }
+  aside { width:300px; flex:none; background:var(--panel); border-left:1px solid var(--line);
+    overflow-y:auto; padding:18px 18px 28px; }
+  .tabs { display:flex; gap:4px; background:#12121a; border:1px solid var(--line); border-radius:8px; padding:3px; margin-bottom:14px; }
+  .tabs a { flex:1; text-align:center; padding:5px 0; border-radius:6px; color:var(--dim); text-decoration:none; }
+  .tabs a.on { background:#2a2a38; color:var(--text); }
+  h1 { font-size:16px; margin:0 0 4px; letter-spacing:.3px; }
+  .sub { color:var(--dim); margin:0 0 16px; font-size:12px; }
+  h2 { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--dim);
+    margin:20px 0 8px; font-weight:600; }
+  .row { display:flex; align-items:center; gap:8px; margin:6px 0; }
+  .row label { flex:0 0 92px; color:var(--dim); }
+  .row input[type=range] { flex:1; accent-color:var(--accent); min-width:0; }
+  .row output { width:36px; text-align:right; font-variant-numeric:tabular-nums; color:var(--dim); font-size:12px; }
+  select, input[type=number] { background:#12121a; color:var(--text); border:1px solid var(--line);
+    border-radius:6px; padding:5px 7px; font:inherit; min-width:0; }
+  select { flex:1; }
+  button { background:#262633; color:var(--text); border:1px solid var(--line); border-radius:7px;
+    padding:7px 10px; font:inherit; cursor:pointer; }
+  button:hover { background:#30303f; }
+  button.primary { background:linear-gradient(90deg,#ff1f3d,#7a0c1c); border:none; font-weight:600; }
+  button.primary:hover { filter:brightness(1.15); }
+  .btns { display:flex; gap:8px; }
+  .btns button { flex:1; }
+  .swatches { display:flex; gap:6px; }
+  .swatches input[type=color] { flex:1; height:30px; padding:0; border:1px solid var(--line);
+    border-radius:6px; background:none; cursor:pointer; min-width:0; }
+  .res { display:flex; gap:6px; align-items:center; }
+  .res input { width:76px; }
+  .hint { color:var(--dim); font-size:11px; margin-top:6px; }
+</style>
+<meta name="theme-color" content="#111117">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fluffee">
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas></div>
+
+<aside>
+  <div class="tabs"><a href="index.html">〰 Waves</a><a href="shards.html" class="on">◆ Shards</a><a href="tiles.html">⬢ Tiles</a></div>
+  <h1>Fluffee Wallpapers</h1>
+  <p class="sub">Dark crystal shards with neon edges</p>
+
+  <div class="btns">
+    <button class="primary" id="randomize">🎲 Randomize</button>
+    <button id="download">⬇ Save PNG</button>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <label>Seed</label>
+    <input type="number" id="seed" style="flex:1">
+    <button id="newSeed" title="New seed, keep everything else">↻</button>
+  </div>
+
+  <h2>Colors</h2>
+  <div class="row">
+    <label>Palette</label>
+    <select id="palette"></select>
+  </div>
+  <div class="swatches" id="swatches"></div>
+  <div class="hint">Background · Shards · Glow · Glow core</div>
+
+  <h2>Shards</h2>
+  <div id="sliders"></div>
+
+  <h2>Output</h2>
+  <div class="row">
+    <label>Size</label>
+    <select id="preset">
+      <option value="1920x1080">1920 × 1080 (FHD)</option>
+      <option value="2560x1440">2560 × 1440 (QHD)</option>
+      <option value="3840x2160">3840 × 2160 (4K)</option>
+      <option value="3440x1440">3440 × 1440 (Ultrawide)</option>
+      <option value="5120x2880">5120 × 2880 (5K)</option>
+      <option value="1170x2532">1170 × 2532 (Phone)</option>
+      <option value="1440x3200">1440 × 3200 (Phone tall)</option>
+      <option value="2048x2048">2048 × 2048 (Square)</option>
+      <option value="custom">Custom…</option>
+    </select>
+  </div>
+  <div class="res">
+    <input type="number" id="w" min="64" max="8192"> ×
+    <input type="number" id="h" min="64" max="8192">
+  </div>
+  <div class="hint keys">Shortcuts: <b>Space</b> randomize · <b>S</b> save</div>
+</aside>
+
+<script src="pwa.js"></script>
+<script>
+// ---------- Palettes: [background, shard, glow, glow core] ----------
+const PALETTES = {
+  "Crimson":     ["#060607", "#2c2c31", "#ff0a2a", "#ff7584"],
+  "Cyber Blue":  ["#04060b", "#252c38", "#0a8cff", "#8ad8ff"],
+  "Toxic":       ["#050705", "#272c28", "#2dff4a", "#c8ffb8"],
+  "Gold":        ["#070605", "#2f2b25", "#ffa600", "#ffe6a0"],
+  "Violet":      ["#07050b", "#2b2634", "#a100ff", "#e3adff"],
+  "Magenta":     ["#08040a", "#2d2531", "#ff1fa9", "#ffa8de"],
+  "Ember":       ["#080504", "#2e2723", "#ff4a00", "#ffb47a"],
+  "Ice":         ["#090c10", "#39414f", "#9fe2ff", "#ffffff"],
+  "Mono":        ["#050505", "#2f2f2f", "#e6e6e6", "#ffffff"],
+  "Daylight":    ["#b8bcc4", "#f2f3f6", "#ff1f3a", "#ff9aa6"],
+};
+
+const SLIDERS = [
+  ["count",      "Shards",        8, 140, 1,   45],
+  ["angle",      "Direction",   -90,  90, 1,   28],
+  ["chaos",      "Chaos",         0,   1, 0.01, 0.35],
+  ["length",     "Length",      0.2, 1.6, 0.01, 1.1],
+  ["thickness",  "Thickness",  0.03, 0.5, 0.01, 0.3],
+  ["glowChance", "Glowing",       0,   1, 0.01, 0.4],
+  ["glowSize",   "Glow size",     0,   1, 0.01, 0.6],
+  ["accentFill", "Lit faces",     0,   1, 0.01, 0.75],
+  ["streaks",    "Streaks",       0,   1, 0.01, 0.2],
+  ["hollow",     "Frames",        0,   1, 0.01, 0.15],
+  ["contrast",   "Facet contrast",0,   1, 0.01, 0.7],
+  ["ridge",      "Edge sheen",    0,   1, 0.01, 0.4],
+  ["depth",      "Depth blur",    0,   1, 0.01, 0.4],
+  ["ambient",    "Ambient glow",  0,   1, 0.01, 0.45],
+  ["light",      "Light angle",   0, 360, 1,   120],
+  ["grain",      "Grain",         0,   1, 0.01, 0.2],
+];
+
+const state = { seed: 7, palette: "Crimson", colors: [...PALETTES["Crimson"]], w: 3840, h: 2160 };
+SLIDERS.forEach(([k,,,,,v]) => state[k] = v);
+
+// ---------- Helpers ----------
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const hexToRgb = h => { const n = parseInt(h.slice(1), 16); return [n>>16&255, n>>8&255, n&255]; };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const mixc = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+const rgba = (c, a = 1) => `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`;
+const add = (p, d, k) => [p[0] + d[0]*k, p[1] + d[1]*k];
+
+// Small tiling noise texture for grain
+const noise = document.createElement("canvas");
+noise.width = noise.height = 256;
+{ const nctx = noise.getContext("2d"), img = nctx.createImageData(256, 256);
+  for (let i = 0; i < img.data.length; i += 4) { const v = Math.random() * 255; img.data[i] = img.data[i+1] = img.data[i+2] = v; img.data[i+3] = 255; }
+  nctx.putImageData(img, 0, 0); }
+
+// ---------- Scene generation (units: 1 = image height) ----------
+function generate(aspect) {
+  const rnd = mulberry32(state.seed);
+  const base = state.angle * Math.PI / 180;
+  const items = [];
+  // Every shard consumes the same number of random values, so sliders don't reshuffle the scene.
+  for (let i = 0; i < 140; i++) {
+    const r = Array.from({ length: 16 }, rnd);
+    if (i >= state.count) continue;
+    const depth = r[0];
+    const c = [(-0.15 + r[1] * 1.3) * aspect, -0.15 + r[2] * 1.3];
+    const flipAngle = r[3] < 0.12 ? (r[4] < 0.5 ? 1 : -1) * Math.PI * 0.45 * state.chaos : 0;
+    const ang = base + (r[5] - 0.5) * state.chaos * 1.4 + flipAngle;
+    const dir = [Math.cos(ang), -Math.sin(ang)];
+    const perp = [-dir[1], dir[0]];
+    const len = state.length * (0.25 + r[6] * 0.9) * (0.55 + depth * 0.75);
+    const wid = len * state.thickness * (0.35 + r[7] * 1.2);
+    const tipA = add(c, dir, len * (0.45 + r[8] * 0.35));
+    const tipB = add(c, dir, -len * (0.25 + r[9] * 0.4));
+    const sideL = add(add(c, perp, wid * (0.4 + r[10] * 0.8)), dir, len * (r[11] - 0.5) * 0.7);
+    const sideR = add(add(c, perp, -wid * (0.2 + r[12] * 0.7)), dir, len * (r[13] - 0.5) * 0.7);
+    items.push({ type: "shard", depth, perp, tipA, tipB, sideL, sideR,
+      glow: r[14] < state.glowChance, hollow: r[15] < state.hollow,
+      edges: 1 + ((r[14] * 997) % 3 | 0), litFace: r[3] < 0.5 ? 0 : 1, flip: r[4] < 0.5, jit: [r[9] - 0.5, r[13] - 0.5] });
+  }
+  for (let i = 0; i < 40; i++) {
+    const r = Array.from({ length: 6 }, rnd);
+    if (i >= Math.round(state.streaks * 40)) continue;
+    const ang = base + (r[0] - 0.5) * state.chaos * 0.6;
+    const dir = [Math.cos(ang), -Math.sin(ang)];
+    const c = [(-0.1 + r[1] * 1.2) * aspect, -0.1 + r[2] * 1.2];
+    const len = state.length * (0.15 + r[3] * 0.6);
+    items.push({ type: "streak", depth: 0.25 + r[4] * 0.75, a: add(c, dir, len * 0.5), b: add(c, dir, -len * 0.5), w: 0.5 + r[5] });
+  }
+  const glows = [[(0.3 + rnd() * 0.5) * aspect, 0.45 + rnd() * 0.4, 0.5 + rnd() * 0.4],
+                 [rnd() * aspect, rnd() * 0.5, 0.3 + rnd() * 0.3]];
+  items.sort((a, b) => a.depth - b.depth);
+  return { items, glows };
+}
+
+// ---------- Rendering ----------
+function render(ctx, W, H) {
+  const s = H / 1080, A = W / H;
+  const P = p => [p[0] * H, p[1] * H];
+  const [bg, sh, ac, core] = state.colors.map(hexToRgb);
+  const la = state.light * Math.PI / 180, L = [Math.cos(la), -Math.sin(la)];
+  const { items, glows } = generate(A);
+
+  const reset = () => { ctx.globalCompositeOperation = "source-over"; ctx.shadowBlur = 0; ctx.shadowColor = "transparent"; ctx.globalAlpha = 1; };
+  const poly = pts => { ctx.beginPath(); pts.forEach((p, i) => { const q = P(p); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.closePath(); };
+  const line = pts => { ctx.beginPath(); pts.forEach((p, i) => { const q = P(p); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); };
+  const lin = (p0, p1, stops) => { const a = P(p0), b = P(p1), g = ctx.createLinearGradient(a[0], a[1], b[0], b[1]);
+    stops.forEach(([t, c]) => g.addColorStop(t, c)); return g; };
+  const glowStroke = (k, width) => {
+    ctx.globalCompositeOperation = "lighter";
+    ctx.lineJoin = "miter"; ctx.lineCap = "round";
+    ctx.shadowColor = rgba(ac, 1);
+    ctx.shadowBlur = (3 + state.glowSize * 45) * s * k;
+    ctx.strokeStyle = rgba(ac, 0.85 * k); ctx.lineWidth = width * s; ctx.stroke();
+    ctx.shadowBlur = (1 + state.glowSize * 8) * s;
+    ctx.strokeStyle = rgba(core, 0.9 * k); ctx.lineWidth = Math.max(0.6, width * 0.35) * s; ctx.stroke();
+    reset();
+  };
+
+  reset(); ctx.filter = "none";
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  // Background: base color, faint lift top-left, ambient colored light
+  ctx.fillStyle = rgba(bg); ctx.fillRect(0, 0, W, H);
+  let g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, rgba(mixc(bg, sh, 0.6), 1)); g.addColorStop(1, rgba(bg, 0));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  for (const [gx, gy, gr] of glows) {
+    g = ctx.createRadialGradient(gx * H, gy * H, 0, gx * H, gy * H, gr * H);
+    g.addColorStop(0, rgba(ac, 0.35 * state.ambient)); g.addColorStop(1, rgba(ac, 0));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+
+  for (const it of items) {
+    const k = 0.45 + 0.55 * it.depth;                       // distant items are darker and dimmer
+    const blur = state.depth * Math.pow(1 - it.depth, 2) * 12 * s;
+    ctx.filter = blur > 0.4 ? `blur(${blur.toFixed(1)}px)` : "none";
+
+    if (it.type === "streak") {
+      line([it.a, it.b]);
+      glowStroke(k * 0.9, it.w * (0.6 + it.depth));
+      continue;
+    }
+
+    const { tipA, tipB, sideL, sideR, perp } = it;
+    const mid = [(tipA[0] + tipB[0]) / 2, (tipA[1] + tipB[1]) / 2];
+    const faces = [[tipA, tipB, sideL], [tipA, tipB, sideR]];
+    faces.forEach((f, fi) => {
+      const side = fi === 0 ? 1 : -1;
+      const lit = perp[0] * side * L[0] + perp[1] * side * L[1];
+      const b = clamp((0.62 + lit * 0.5 * state.contrast * 1.5 + it.jit[fi] * 0.3) * k, 0.04, 1.25);
+      poly(f);
+      ctx.fillStyle = lin(mid, f[2], [[0, rgba(mixc(bg, sh, b))], [1, rgba(mixc(bg, sh, b * 0.45))]]);
+      ctx.fill();
+      if (it.glow && fi === it.litFace && state.accentFill > 0) {
+        const [p0, p1] = it.flip ? [tipA, tipB] : [tipB, tipA];
+        ctx.globalCompositeOperation = "lighter";
+        ctx.fillStyle = lin(p0, p1, [[0, rgba(ac, 1.0 * state.accentFill * k)], [0.45, rgba(ac, 0.3 * state.accentFill * k)], [0.95, rgba(ac, 0)]]);
+        ctx.fill();
+        reset();
+      }
+    });
+
+    if (it.hollow) {
+      const cen = [(tipA[0] + tipB[0] + sideL[0] + sideR[0]) / 4, (tipA[1] + tipB[1] + sideL[1] + sideR[1]) / 4];
+      const inset = [tipA, sideL, tipB, sideR].map(p => [cen[0] + (p[0] - cen[0]) * 0.68, cen[1] + (p[1] - cen[1]) * 0.6]);
+      poly(inset);
+      ctx.fillStyle = lin(inset[0], inset[2], [[0, rgba(mixc(bg, sh, 0.15 * k))], [1, rgba(bg)]]);
+      ctx.fill();
+      if (it.glow) {
+        ctx.globalCompositeOperation = "lighter";
+        ctx.fillStyle = lin(inset[2], inset[0], [[0, rgba(ac, 0.5 * state.accentFill * k)], [0.8, rgba(ac, 0)]]);
+        ctx.fill(); reset();
+        poly(inset); glowStroke(k, 1.2 + it.depth);
+      }
+    }
+
+    // Subtle highlight on the ridges
+    if (state.ridge > 0) {
+      ctx.beginPath(); [[sideL, tipA, sideR, tipB, sideL], [tipA, tipB]].forEach(pts =>
+        pts.forEach((p, i) => { const q = P(p); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }));
+      ctx.strokeStyle = rgba(mixc(sh, [255, 255, 255], 0.5), 0.14 * state.ridge * k);
+      ctx.lineWidth = 1 * s; ctx.lineJoin = "miter"; ctx.stroke();
+    }
+
+    if (it.glow) {
+      ctx.beginPath();
+      const add2 = pts => pts.forEach((p, i) => { const q = P(p); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); });
+      if (it.edges & 1) add2([tipB, sideL, tipA]);
+      if (it.edges & 2) add2([tipB, sideR, tipA]);
+      glowStroke(k, 1.2 + 2 * it.depth);
+    }
+  }
+  ctx.filter = "none";
+
+  // Ambient bloom over everything, then vignette and grain
+  ctx.globalCompositeOperation = "screen";
+  const [gx, gy, gr] = glows[0];
+  g = ctx.createRadialGradient(gx * H, gy * H, 0, gx * H, gy * H, gr * 1.3 * H);
+  g.addColorStop(0, rgba(ac, 0.22 * state.ambient)); g.addColorStop(1, rgba(ac, 0));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  reset();
+  g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.hypot(W, H) * 0.6);
+  g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,0.55)");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  if (state.grain > 0) {
+    ctx.globalCompositeOperation = "overlay"; ctx.globalAlpha = state.grain * 0.35;
+    ctx.fillStyle = ctx.createPattern(noise, "repeat"); ctx.fillRect(0, 0, W, H);
+    reset();
+  }
+}
+
+// ---------- Preview ----------
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+function draw() {
+  const stage = document.getElementById("stage");
+  const [maxW, maxH] = stageBox(stage);
+  const sc = Math.min(maxW / state.w, maxH / state.h);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.style.width = Math.round(state.w * sc) + "px";
+  canvas.style.height = Math.round(state.h * sc) + "px";
+  canvas.width = Math.max(1, Math.round(state.w * sc * dpr));
+  canvas.height = Math.max(1, Math.round(state.h * sc * dpr));
+  render(ctx, canvas.width, canvas.height);
+}
+let pending = false;
+const schedule = () => { if (!pending) { pending = true; requestAnimationFrame(() => { pending = false; draw(); }); } };
+
+// ---------- UI ----------
+const $ = id => document.getElementById(id);
+const fmt = (v, step) => step >= 1 ? String(Math.round(v)) : v.toFixed(2);
+const sliderEls = {};
+SLIDERS.forEach(([key, label, min, max, step]) => {
+  const row = document.createElement("div"); row.className = "row";
+  row.innerHTML = `<label>${label}</label><input type="range" min="${min}" max="${max}" step="${step}"><output></output>`;
+  const input = row.querySelector("input"), out = row.querySelector("output");
+  input.addEventListener("input", () => { state[key] = +input.value; out.textContent = fmt(+input.value, step); schedule(); });
+  sliderEls[key] = { input, out, step };
+  $("sliders").appendChild(row);
+});
+
+Object.keys(PALETTES).forEach(name => $("palette").add(new Option(name, name)));
+$("palette").add(new Option("Custom", "Custom"));
+const colorEls = state.colors.map((_, i) => {
+  const el = document.createElement("input"); el.type = "color";
+  el.addEventListener("input", () => { state.colors[i] = el.value; state.palette = "Custom"; $("palette").value = "Custom"; schedule(); });
+  $("swatches").appendChild(el); return el;
+});
+
+function syncUI() {
+  SLIDERS.forEach(([k]) => { const s = sliderEls[k]; s.input.value = state[k]; s.out.textContent = fmt(state[k], s.step); });
+  colorEls.forEach((el, i) => el.value = state.colors[i]);
+  $("palette").value = state.palette;
+  $("seed").value = state.seed;
+  $("w").value = state.w; $("h").value = state.h;
+}
+
+$("palette").addEventListener("change", e => {
+  if (PALETTES[e.target.value]) { state.palette = e.target.value; state.colors = [...PALETTES[state.palette]]; syncUI(); schedule(); }
+});
+$("seed").addEventListener("input", e => { state.seed = (+e.target.value) | 0; schedule(); });
+$("newSeed").addEventListener("click", () => { state.seed = (Math.random() * 1e6) | 0; syncUI(); schedule(); });
+$("preset").addEventListener("change", e => {
+  if (e.target.value === "custom") return;
+  const [w, h] = e.target.value.split("x").map(Number); state.w = w; state.h = h; syncUI(); schedule();
+});
+["w", "h"].forEach(id => $(id).addEventListener("change", e => {
+  state[id] = Math.max(64, Math.min(8192, (+e.target.value) | 0)); $("preset").value = "custom"; syncUI(); schedule();
+}));
+
+function randomize() {
+  const r = Math.random, lerp = (a, b) => a + (b - a) * r();
+  state.seed = (r() * 1e6) | 0;
+  const names = Object.keys(PALETTES);
+  state.palette = names[(r() * names.length) | 0];
+  state.colors = [...PALETTES[state.palette]];
+  Object.assign(state, {
+    count: Math.round(lerp(30, 80)), angle: Math.round(lerp(-60, 60)), chaos: lerp(0.15, 0.6),
+    length: lerp(0.6, 1.3), thickness: lerp(0.15, 0.4), glowChance: lerp(0.25, 0.6), glowSize: lerp(0.3, 0.8),
+    accentFill: lerp(0.3, 0.85), streaks: lerp(0.05, 0.45), hollow: lerp(0, 0.18), contrast: lerp(0.4, 0.85),
+    ridge: lerp(0.2, 0.6), depth: lerp(0.2, 0.6), ambient: lerp(0.25, 0.7), light: Math.round(lerp(60, 160)),
+  });
+  syncUI(); schedule();
+}
+$("randomize").addEventListener("click", randomize);
+
+function download() {
+  const out = document.createElement("canvas");
+  out.width = state.w; out.height = state.h;
+  render(out.getContext("2d"), state.w, state.h);
+  out.toBlob(blob => {
+    saveImage(blob, `fluffee-shards-${state.palette.toLowerCase().replace(/\s+/g, "-")}-${state.seed}-${state.w}x${state.h}.png`);
+  }, "image/png");
+}
+$("download").addEventListener("click", download);
+
+window.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" && e.target.type !== "range") return;
+  if (e.code === "Space") { e.preventDefault(); randomize(); }
+  else if (e.key === "s") download();
+});
+window.addEventListener("resize", schedule);
+
+[state.w, state.h] = setupDevicePreset($("preset"));
+syncUI(); draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+/* Shared phone layout and save sheet, loaded after each page's own styles. */
+button, select, input, .tabs a { touch-action: manipulation; }
+
+@media (max-width: 760px) {
+  html, body { height: auto; }
+  body { display: block; }
+  #stage { position: sticky; top: 0; z-index: 2; height: 56svh; background: var(--bg);
+    padding: max(12px, env(safe-area-inset-top)) 12px 12px; }
+  #c { border-radius: 8px; }
+  aside { width: 100%; border-left: none; border-top: 1px solid var(--line);
+    padding: 16px 16px calc(28px + env(safe-area-inset-bottom)); }
+  .row label { flex-basis: 104px; }
+  .row input[type=range] { height: 28px; }
+  button { padding: 10px 12px; }
+  .hint.keys { display: none; }
+}
+
+.save-sheet { position: fixed; inset: 0; z-index: 10; background: #000c; display: flex;
+  align-items: center; justify-content: center; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); }
+.save-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px;
+  max-width: 420px; width: 100%; max-height: 100%; display: flex; flex-direction: column; gap: 12px; }
+.save-card img { width: 100%; min-height: 0; flex: 1; object-fit: contain; border-radius: 8px;
+  -webkit-touch-callout: default; }
+.save-btns { display: flex; gap: 8px; }
+.save-btns button { flex: 1; }
+.save-hint { margin: 0; color: var(--dim); font-size: 12px; }
