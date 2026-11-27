@@ -350,10 +350,11 @@ $("seed").addEventListener("input", e => { state.seed = (+e.target.value) | 0; d
 $("newSeed").addEventListener("click", () => { state.seed = (Math.random() * 1e6) | 0; syncUI(); draw(); });
 $("preset").addEventListener("change", e => {
   if (e.target.value === "custom") return;
-  const [w, h] = e.target.value.split("x").map(Number); state.w = w; state.h = h; syncUI(); draw();
+  [state.w, state.h] = fitCanvasSize(...e.target.value.split("x").map(Number)); syncUI(); draw();
 });
 ["w", "h"].forEach(id => $(id).addEventListener("change", e => {
-  state[id] = Math.max(64, Math.min(8192, (+e.target.value) | 0)); $("preset").value = "custom"; syncUI(); draw();
+  state[id] = Math.max(64, Math.min(8192, (+e.target.value) | 0)); [state.w, state.h] = fitCanvasSize(state.w, state.h);
+  $("preset").value = "custom"; syncUI(); draw();
 }));
 $("animate").addEventListener("change", e => state.animate = e.target.checked);
 

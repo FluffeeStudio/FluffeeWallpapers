@@ -194,10 +194,11 @@ float fbm(vec2 p){ float v = 0., a = .5; mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
     $("newSeed").addEventListener("click", () => { S.seed = (Math.random() * 1e6) | 0; syncUI(); schedule(); });
     $("preset").addEventListener("change", e => {
       if (e.target.value === "custom") return;
-      const [w, h] = e.target.value.split("x").map(Number); S.w = w; S.h = h; syncUI(); schedule();
+      [S.w, S.h] = fitCanvasSize(...e.target.value.split("x").map(Number)); syncUI(); schedule();
     });
     ["w", "h"].forEach(id => $(id).addEventListener("change", e => {
-      S[id] = Math.max(64, Math.min(8192, (+e.target.value) | 0)); $("preset").value = "custom"; syncUI(); schedule();
+      S[id] = Math.max(64, Math.min(8192, (+e.target.value) | 0)); [S.w, S.h] = fitCanvasSize(S.w, S.h);
+      $("preset").value = "custom"; syncUI(); schedule();
     }));
 
     function randomize() {
@@ -220,7 +221,8 @@ float fbm(vec2 p){ float v = 0., a = .5; mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
         const out = document.createElement("canvas");
         out.width = S.w; out.height = S.h;
         cfg.render(out.getContext("2d"), S.w, S.h, S);
-        out.toBlob(blob => saveImage(blob, name), "image/png");
+        // Zero the size afterwards so Safari frees the bitmap now rather than whenever it gets round to it.
+        out.toBlob(blob => { out.width = out.height = 0; saveImage(blob, name); }, "image/png");
       }
     }
     $("download").addEventListener("click", download);

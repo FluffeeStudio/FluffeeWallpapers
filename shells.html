@@ -93,9 +93,8 @@ function render(ctx, W, H, S) {
     if (S.sheen > 0) {
       const edgeG = ctx.createLinearGradient(lx0, ly0, lx1, ly1);
       edgeG.addColorStop(0, rgba(tint, 0)); edgeG.addColorStop(0.6, rgba(tint, 0.05 * S.sheen)); edgeG.addColorStop(1, rgba(rim, 0.3 * S.sheen));
-      ctx.filter = `blur(${sh.r * 0.07}px)`;
-      ctx.lineWidth = sh.r * 0.18; ctx.strokeStyle = edgeG; ctx.stroke(path);
-      ctx.filter = "none";
+      ctx.lineWidth = sh.r * 0.18; ctx.strokeStyle = edgeG;
+      blurred(ctx, sh.r * 0.07, rgba(rim), () => ctx.stroke(path));
     }
     ctx.restore();
 

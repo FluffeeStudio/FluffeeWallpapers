@@ -254,10 +254,10 @@ function render(ctx, W, H) {
 
     // soft cast shadow
     if (state.shadow > 0) {
-      ctx.filter = `blur(${(4 + h * 900) * s}px)`;
-      path(poly, [e[0] * 1.6 - L2[0] * h * 0.8, e[1] * 1.6 - L2[1] * h * 0.8]);
-      ctx.fillStyle = rgba([0, 0, 0], 0.75 * state.shadow); ctx.fill();
-      ctx.filter = "none";
+      ctx.fillStyle = rgba([0, 0, 0], 0.75 * state.shadow);
+      blurred(ctx, (4 + h * 900) * s, "#000", () => {
+        path(poly, [e[0] * 1.6 - L2[0] * h * 0.8, e[1] * 1.6 - L2[1] * h * 0.8]); ctx.fill();
+      });
     }
 
     // side walls
